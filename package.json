@@ -4,6 +4,9 @@
   "description": "设置模板，同步项目；上传/预览/运行IDE",
   "version": "1.0.0",
   "publisher": "Wicky",
+  "repository": {
+    "url": "https://github.com/wicky4github/vscode-miniprogram-util"
+  },
   "engines": {
     "vscode": "^1.47.0"
   },
@@ -227,7 +230,8 @@
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "node ./test/runTest.js",
-    "miniprogram-ci": "miniprogram-ci"
+    "miniprogram-ci": "miniprogram-ci",
+    "build": "vsce package --yarn"
   },
   "devDependencies": {
     "@types/vscode": "^1.47.0",
