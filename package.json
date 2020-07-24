@@ -231,13 +231,13 @@
     "pretest": "npm run lint",
     "test": "node ./test/runTest.js",
     "miniprogram-ci": "miniprogram-ci",
-    "build": "vsce package --yarn"
+    "compile": "vsce package --yarn"
   },
   "devDependencies": {
-    "@types/vscode": "^1.47.0",
     "@types/glob": "^7.1.1",
     "@types/mocha": "^7.0.2",
     "@types/node": "^13.11.0",
+    "@types/vscode": "^1.47.0",
     "eslint": "^6.8.0",
     "glob": "^7.1.6",
     "mocha": "^7.1.2",
@@ -245,6 +245,7 @@
     "vscode-test": "^1.3.0"
   },
   "dependencies": {
+    "gitignore-parser": "^0.0.2",
     "json-beautify": "^1.1.1",
     "miniprogram-ci": "^1.0.51",
     "regenerator-runtime": "^0.13.7",
