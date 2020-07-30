@@ -231,7 +231,7 @@
     "pretest": "npm run lint",
     "test": "node ./test/runTest.js",
     "miniprogram-ci": "miniprogram-ci",
-    "compile": "vsce package --yarn"
+    "build": "vsce package --yarn"
   },
   "devDependencies": {
     "@types/glob": "^7.1.1",
@@ -247,8 +247,6 @@
   "dependencies": {
     "gitignore-parser": "^0.0.2",
     "json-beautify": "^1.1.1",
-    "miniprogram-ci": "^1.0.51",
-    "regenerator-runtime": "^0.13.7",
     "walker": "^1.0.7"
   }
 }

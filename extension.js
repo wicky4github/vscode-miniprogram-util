@@ -4,7 +4,7 @@ const {showInformationMessage, showWarningMessage, showErrorMessage, setStatusBa
 const {showQuickPick, createTreeView, showOpenDialog, showInputBox} = window
 const {registerCommand} = commands
 const fs = require('fs')
-const path = require('path') 
+const path = require('path')
 
 //注册事件，生成左侧视图
 const events = require('./src/bus')
@@ -36,11 +36,12 @@ events.on('mpu:ready', service => {
 //开始索引服务
 const service = require('./src/service')
 
-//注册命令
-const ci = require('miniprogram-ci')
+//注册命令 "miniprogram-ci": "^1.0.51", "regenerator-runtime": "^0.13.7",
+// const ci = require('miniprogram-ci')
+const ci = {}
 const cp = require('child_process')
 const os = require('os')
-const util = require('util')
+const util = require('./src/util')
 const activate = (context) => {
 	//切换启用状态
 	context.subscriptions.push(registerCommand('mpu.toggleEnable', () => {
