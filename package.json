@@ -230,7 +230,6 @@
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "node ./test/runTest.js",
-    "miniprogram-ci": "miniprogram-ci",
     "build": "vsce package --yarn"
   },
   "devDependencies": {
