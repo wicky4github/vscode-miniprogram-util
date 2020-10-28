@@ -28,7 +28,13 @@ events.on('mpu:ready', service => {
 	//监听文件
 	closeWatcher()
 	watcher = fs.watch(service.rootPath, { recursive: false }, (eventType, name) => {
+		//eventType:rename=新增/重命名/删除
+		//name:文件名称
 		console.log(eventType, name)
+		if (name.test(/^\./)) {
+			//.开头的文件夹不做任何处理（如.idea）
+			return
+		}
 		service.init()
 	})
 })
@@ -226,6 +232,7 @@ const activate = (context) => {
 		const configPath = path.join(projectPath, 'project.config.json')
 		if (!fs.existsSync(configPath)) {
 			showErrorMessage(`${name}没有project.config.json文件`)
+			global.mpuIDEInstalling = false
 			return
 		}
 		const configContent = fs.readFileSync(configPath, {encoding:'utf-8'})
@@ -237,6 +244,8 @@ const activate = (context) => {
 			}
 		} catch (e) {
 			showErrorMessage(`${name}的project.config.json文件不合法`)
+			global.mpuIDEInstalling = false
+			return
 		}
 		const {appid, setting: {es6, enhance: es7, minified: minify}} = projectConfig
 		const setting = { es6, es7, minify }
@@ -278,6 +287,7 @@ const activate = (context) => {
 		} catch (e) {
 			console.log(e)
 			showErrorMessage(`${name}没有私钥文件，请到微信“小程序后台 - 开发 - 开发设置 - 小程序代码上传”获取`)
+			global.mpuIDEInstalling = false
 			return
 		}
 		// const ciConfig = { appid, type: 'miniProgram', projectPath, privateKeyPath, ignores: ['node_modules/**/*'] }
@@ -316,188 +326,192 @@ const activate = (context) => {
 			console.log(`主包：${util.humansize(appSize)}；分包：${util.humansize(packageSize)}，共${packageCount}个`)
 			showInformationMessage(`${msg}，编译后代码包大小：${util.humansize(fullSize)}`)
 		}
-		switch (type) {
-			//上传
-			case 1:
-				try {
-					let version = ''
-					let desc = ''
-					await new Promise((resolve, reject) => {
-						showInputBox({
-							ignoreFocusOut: true,
-							password: false,
-							placeHolder: '请输入版本号+描述（非必填）',
-							prompt: '例：1.0.0@hello'
-						}).then(v => {
-							const str = v || ''; [version, desc] = str.split('@')
-							if (!version) {
-								version = '1.0.0'
-							}
-							if (!desc) {
-								desc = `${(new Date()).toLocaleString()}上传`
-							}
-							resolve()
-						}).catch(reject)
-					})
+		try {
+			switch (type) {
+				//上传
+				case 1:
 					try {
-						/* const uploadResult = await ci.upload({project, version, desc, setting, onProgressUpdate: (task) => {
-							if (task && task._msg) {
-								//doing pages/shop/goods/index
-								setStatusBarMessage(`[${task._status}] ${task._msg}`, 1000)
-							} else {
-								//run task busy
-								console.log(task)
-							}
-						}})
-						showResult('上传成功', uploadResult) */
-						let args = [
-							'upload',
-							'--pp', projectPath,
-							'--pkp', privateKeyPath,
-							'--appid', appid,
-							'--uv', version,
-							'--ud', desc,
-							'--r', 1,
-							'--enable-es6', setting.es6 ? true : false,
-							'--enable-es7', setting.es6 ? true : false,
-							'--enable-minify', setting.es6 ? true : false,
-						];
+						let version = ''
+						let desc = ''
 						await new Promise((resolve, reject) => {
-							const run = cp.spawn('miniprogram-ci' + (process.platform === 'win32' ? '.cmd' : ''), args)
-							run.stdout.on('data', (data) => {
-								let result = data.toString().trim()
-								// console.log('stdout> ' + result)
-								setStatusBarMessage(result, 1000)
-							});
-							run.stderr.on('data', (data) => {
-								let result = data.toString().trim()
-								// console.log('stderr> ' + result)
-								setStatusBarMessage(result, 1000)
-								result && !/worker thread/.test(result) && reject(result)
-							});
-							run.on('close', (code) => {
-								console.log('code:' + code)
+							showInputBox({
+								ignoreFocusOut: true,
+								password: false,
+								placeHolder: '请输入版本号+描述（非必填）',
+								prompt: '例：1.0.0@hello'
+							}).then(v => {
+								const str = v || ''; [version, desc] = str.split('@')
+								if (!version) {
+									version = '1.0.0'
+								}
+								if (!desc) {
+									desc = `${(new Date()).toLocaleString()}上传`
+								}
 								resolve()
-							});
+							}).catch(reject)
 						})
-						showInformationMessage('上传成功')
+						try {
+							/* const uploadResult = await ci.upload({project, version, desc, setting, onProgressUpdate: (task) => {
+								if (task && task._msg) {
+									//doing pages/shop/goods/index
+									setStatusBarMessage(`[${task._status}] ${task._msg}`, 1000)
+								} else {
+									//run task busy
+									console.log(task)
+								}
+							}})
+							showResult('上传成功', uploadResult) */
+							let args = [
+								'upload',
+								'--pp', projectPath,
+								'--pkp', privateKeyPath,
+								'--appid', appid,
+								'--uv', version,
+								'--ud', desc,
+								'--r', 1,
+								'--enable-es6', setting.es6 ? true : false,
+								'--enable-es7', setting.es6 ? true : false,
+								'--enable-minify', setting.es6 ? true : false,
+							];
+							await new Promise((resolve, reject) => {
+								const run = cp.spawn('miniprogram-ci' + (process.platform === 'win32' ? '.cmd' : ''), args)
+								run.stdout.on('data', (data) => {
+									let result = data.toString().trim()
+									// console.log('stdout> ' + result)
+									setStatusBarMessage(result, 1000)
+								});
+								run.stderr.on('data', (data) => {
+									let result = data.toString().trim()
+									// console.log('stderr> ' + result)
+									setStatusBarMessage(result, 1000)
+									result && !/worker thread/.test(result) && reject(result)
+								});
+								run.on('close', (code) => {
+									console.log('code:' + code)
+									resolve()
+								});
+							})
+							showInformationMessage('上传成功')
+						} catch (e) {
+							showError('上传失败', e)
+						}
 					} catch (e) {
-						showError('上传失败', e)
+						//取消输入
+						console.log(e)
 					}
-				} catch (e) {
-					//取消输入
-					console.log(e)
-				}
-				break
-			//预览
-			case 2:
-				try {
-					let version = ''
-					let desc = ''
-					let mpPath = undefined
-					let pagePath = undefined
-					let searchQuery = undefined
-					await new Promise((resolve, reject) => {
-						showInputBox({
-							ignoreFocusOut: true,
-							password: false,
-							placeHolder: '请输入版本号+描述+路径（非必填）',
-							prompt: '例：1.0.0@商品详情@pages/shop/goods/detail?goods_id=1'
-						}).then(v => {
-							const str = v || ''; [version, desc, mpPath] = str.split('@')
-							if (!version) {
-								version = '1.0.0'
-							}
-							if (!desc) {
-								desc = `${(new Date()).toLocaleString()}上传`
-							}
-							mpPath = mpPath || ''; [pagePath, searchQuery] = mpPath.split('?')
-							if (!pagePath) pagePath = undefined
-							//预览参数 [注意!]这里的`&`字符在命令行中应写成转义字符`\&`
-							if (!searchQuery) searchQuery = undefined
-							resolve()
-						}).catch(reject)
-					})
+					break
+				//预览
+				case 2:
 					try {
-						let qrcodeFormat = 'image'
-						let qrcodeOutputDir = path.join(service.ideaRoot, 'preview')
-						if (!fs.existsSync(qrcodeOutputDir)) util.mkdirs(qrcodeOutputDir)
-						if (!fs.existsSync(qrcodeOutputDir)) throw new Error('预览码文件夹生成失败')
-						let qrcodeOutputDest = path.join(qrcodeOutputDir, `${appid}.png`)
-						/* const previewResult = await ci.preview({project, desc, setting, qrcodeFormat, qrcodeOutputDest, pagePath, searchQuery, onProgressUpdate: (task) => {
-							if (task && task._msg) {
-								//doing pages/shop/goods/index
-								setStatusBarMessage(`[${task._status}] ${task._msg}`, 1000)
-							} else {
-								//run task busy
-								console.log(task)
-							}
-						}}) 
-						showResult('预览成功', previewResult)*/
-						let args = [
-							'preview',
-							'--pp', projectPath,
-							'--pkp', privateKeyPath,
-							'--appid', appid,
-							'--uv', version,
-							'--ud', desc,
-							'--r', 1,
-							'--enable-es6', setting.es6 ? true : false,
-							'--enable-es7', setting.es6 ? true : false,
-							'--enable-minify', setting.es6 ? true : false,
-							'--qrcode-format', qrcodeFormat,
-							'--qrcode-output-dest', qrcodeOutputDest,
-						];
-						if (pagePath) args = args.concat(['--preview-page-path', pagePath])
-						if (searchQuery) args = args.concat(['--preview-search-query', searchQuery.replace(/\&/g, '\\\&')])
+						let version = ''
+						let desc = ''
+						let mpPath = undefined
+						let pagePath = undefined
+						let searchQuery = undefined
 						await new Promise((resolve, reject) => {
-							const run = cp.spawn('miniprogram-ci' + (process.platform === 'win32' ? '.cmd' : ''), args)
-							run.stdout.on('data', (data) => {
-								let result = data.toString().trim()
-								// console.log('stdout> ' + result)
-								setStatusBarMessage(result, 1000)
-							});
-							run.stderr.on('data', (data) => {
-								let result = data.toString().trim()
-								// console.log('stderr> ' + result)
-								setStatusBarMessage(result, 1000)
-								result && !/worker thread/.test(result) && reject(result)
-							});
-							run.on('close', (code) => {
-								console.log('code:' + code)
+							showInputBox({
+								ignoreFocusOut: true,
+								password: false,
+								placeHolder: '请输入版本号+描述+路径（非必填）',
+								prompt: '例：1.0.0@商品详情@pages/shop/goods/detail?goods_id=1'
+							}).then(v => {
+								const str = v || ''; [version, desc, mpPath] = str.split('@')
+								if (!version) {
+									version = '1.0.0'
+								}
+								if (!desc) {
+									desc = `${(new Date()).toLocaleString()}上传`
+								}
+								mpPath = mpPath || ''; [pagePath, searchQuery] = mpPath.split('?')
+								if (!pagePath) pagePath = undefined
+								//预览参数 [注意!]这里的`&`字符在命令行中应写成转义字符`\&`
+								if (!searchQuery) searchQuery = undefined
 								resolve()
-							});
+							}).catch(reject)
 						})
-						await commands.executeCommand('vscode.open', vscode.Uri.file(qrcodeOutputDest))
-						showInformationMessage('预览成功')
+						try {
+							let qrcodeFormat = 'image'
+							let qrcodeOutputDir = path.join(service.ideaRoot, 'preview')
+							if (!fs.existsSync(qrcodeOutputDir)) util.mkdirs(qrcodeOutputDir)
+							if (!fs.existsSync(qrcodeOutputDir)) throw new Error('预览码文件夹生成失败')
+							let qrcodeOutputDest = path.join(qrcodeOutputDir, `${appid}.png`)
+							/* const previewResult = await ci.preview({project, desc, setting, qrcodeFormat, qrcodeOutputDest, pagePath, searchQuery, onProgressUpdate: (task) => {
+								if (task && task._msg) {
+									//doing pages/shop/goods/index
+									setStatusBarMessage(`[${task._status}] ${task._msg}`, 1000)
+								} else {
+									//run task busy
+									console.log(task)
+								}
+							}}) 
+							showResult('预览成功', previewResult)*/
+							let args = [
+								'preview',
+								'--pp', projectPath,
+								'--pkp', privateKeyPath,
+								'--appid', appid,
+								'--uv', version,
+								'--ud', desc,
+								'--r', 1,
+								'--enable-es6', setting.es6 ? true : false,
+								'--enable-es7', setting.es6 ? true : false,
+								'--enable-minify', setting.es6 ? true : false,
+								'--qrcode-format', qrcodeFormat,
+								'--qrcode-output-dest', qrcodeOutputDest,
+							];
+							if (pagePath) args = args.concat(['--preview-page-path', pagePath])
+							if (searchQuery) args = args.concat(['--preview-search-query', searchQuery.replace(/\&/g, '\\\&')])
+							await new Promise((resolve, reject) => {
+								const run = cp.spawn('miniprogram-ci' + (process.platform === 'win32' ? '.cmd' : ''), args)
+								run.stdout.on('data', (data) => {
+									let result = data.toString().trim()
+									// console.log('stdout> ' + result)
+									setStatusBarMessage(result, 1000)
+								});
+								run.stderr.on('data', (data) => {
+									let result = data.toString().trim()
+									// console.log('stderr> ' + result)
+									setStatusBarMessage(result, 1000)
+									result && !/worker thread/.test(result) && reject(result)
+								});
+								run.on('close', (code) => {
+									console.log('code:' + code)
+									resolve()
+								});
+							})
+							await commands.executeCommand('vscode.open', vscode.Uri.file(qrcodeOutputDest))
+							showInformationMessage('预览成功')
+						} catch (e) {
+							showError('预览失败', e)
+						}
 					} catch (e) {
-						showError('预览失败', e)
+						//取消输入
+						console.log(e)
 					}
-				} catch (e) {
-					//取消输入
-					console.log(e)
-				}
-				break
-			//运行
-			case 3:
-				const command = `miniprogram-ci open --project-path ${projectPath} --appid ${appid} --privateKeyPath ${privateKeyPath}`
-				const cwd = context.extensionPath
-				console.log(command)
-				cp.exec(command, {cwd}, (error, stdout, stderr) => {
-					if (error) {
-						console.error(`error: ${error}`)
-						showErrorMessage(`运行失败`)
-					    return
-					}
-					if (stderr) {
-						showErrorMessage(`运行失败`)
-					} else {
-						showInformationMessage('运行成功，如果工具未成功开启，请手动打开工具开启“设置 - 安全 - 服务端口”')
-					}
-				})
-				break
+					break
+				//运行
+				case 3:
+					const command = `miniprogram-ci open --project-path ${projectPath} --appid ${appid} --privateKeyPath ${privateKeyPath}`
+					const cwd = context.extensionPath
+					console.log(command)
+					cp.exec(command, {cwd}, (error, stdout, stderr) => {
+						if (error) {
+							console.error(`error: ${error}`)
+							showErrorMessage(`运行失败`)
+							global.mpuIDERunning = false
+							return
+						}
+						if (stderr) {
+							showErrorMessage(`运行失败`)
+						} else {
+							showInformationMessage('运行成功，如果工具未成功开启，请手动打开工具开启“设置 - 安全 - 服务端口”')
+						}
+					})
+					break
+			}
+		} finally {
+			global.mpuIDERunning = false
 		}
-		global.mpuIDERunning = false
 	}
 
 	//上传项目
