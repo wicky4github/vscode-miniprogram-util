@@ -160,6 +160,7 @@ const activate = (context) => {
 				installer = installers[i]
 				break
 			} catch (e) {
+				console.log(e)
 				installer = ''
 			}
 		}
@@ -216,7 +217,10 @@ const activate = (context) => {
 				let result = cp.execSync('miniprogram-ci --version')
 				console.log(result.toString().trim())
 			} catch (e) {
+				console.log(e)
 				showErrorMessage(`环境异常，请手动运行 "npm install -g miniprogram-ci" 安装环境`)
+				global.mpuIDEInstalling = false
+				return
 			} finally {
 				global.mpuIDEInstalling = false
 				disposable2.dispose()
@@ -309,7 +313,7 @@ const activate = (context) => {
 				console.log(e)
 			}
 		}
-		const showResult = (msg, result) => {
+		/* const showResult = (msg, result) => {
 			const {subPackageInfo} = result
 			let appSize = 0, fullSize = 0, packageCount = 0, packageSize = 0
 			subPackageInfo.forEach(v => {
@@ -325,7 +329,7 @@ const activate = (context) => {
 			})
 			console.log(`主包：${util.humansize(appSize)}；分包：${util.humansize(packageSize)}，共${packageCount}个`)
 			showInformationMessage(`${msg}，编译后代码包大小：${util.humansize(fullSize)}`)
-		}
+		} */
 		try {
 			switch (type) {
 				//上传
@@ -391,13 +395,14 @@ const activate = (context) => {
 									resolve()
 								});
 							})
-							showInformationMessage('上传成功')
+							showInformationMessage(name + '上传成功')
 						} catch (e) {
-							showError('上传失败', e)
+							showError(name + '上传失败', e)
 						}
 					} catch (e) {
 						//取消输入
 						console.log(e)
+						global.mpuIDEInstalling = false
 					}
 					break
 				//预览
@@ -480,13 +485,14 @@ const activate = (context) => {
 								});
 							})
 							await commands.executeCommand('vscode.open', vscode.Uri.file(qrcodeOutputDest))
-							showInformationMessage('预览成功')
+							showInformationMessage(name + '预览成功')
 						} catch (e) {
-							showError('预览失败', e)
+							showError(name + '预览失败', e)
 						}
 					} catch (e) {
 						//取消输入
 						console.log(e)
+						global.mpuIDEInstalling = false
 					}
 					break
 				//运行
@@ -497,12 +503,12 @@ const activate = (context) => {
 					cp.exec(command, {cwd}, (error, stdout, stderr) => {
 						if (error) {
 							console.error(`error: ${error}`)
-							showErrorMessage(`运行失败`)
+							showErrorMessage(name + `运行失败`)
 							global.mpuIDERunning = false
 							return
 						}
 						if (stderr) {
-							showErrorMessage(`运行失败`)
+							showErrorMessage(name + `运行失败`)
 						} else {
 							showInformationMessage('运行成功，如果工具未成功开启，请手动打开工具开启“设置 - 安全 - 服务端口”')
 						}
