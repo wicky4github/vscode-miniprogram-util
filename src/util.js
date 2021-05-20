@@ -16,7 +16,7 @@ const mkdirs = dir => {
 
 const copy = (src, dest, filter) => {
     if (!fs.existsSync(dest)) {
-        mkdirs(dest)
+        mkdirs(src)
     }
     if (!fs.existsSync(src)) {
         return false
@@ -62,9 +62,14 @@ const humansize = (bytes) => {
     return (bytes / Math.pow(k, i)).toFixed(0) + ' ' + sizes[i]
 }
 
+const timeStr = () => {
+    return '[' + new Date().toLocaleString() + ']'
+}
+
 module.exports = {
     dirname,
     mkdirs,
     copy,
     humansize,
+    timeStr,
 }

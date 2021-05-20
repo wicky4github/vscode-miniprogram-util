@@ -67,7 +67,7 @@ class SyncProvider {
 			}
 			this.compileList = []
             return Promise.resolve()
-        }).then(() => showInformationMessage('同步成功')).catch(() => showErrorMessage('同步失败'))
+        }).then(() => showInformationMessage(util.timeStr() + '同步成功')).catch(() => showErrorMessage(util.timeStr() + '同步失败'))
 	}
 
 	syncToTemplate(name, files) {
@@ -87,7 +87,7 @@ class SyncProvider {
 			}
 			this.compileList = []
             return Promise.resolve()
-        }).then(() => showInformationMessage('同步成功')).catch(() => showErrorMessage('同步失败'))
+        }).then(() => showInformationMessage(util.timeStr() + '同步成功')).catch(() => showErrorMessage(util.timeStr() + '同步失败'))
 	}
 
 	//判断路径是否不可替换

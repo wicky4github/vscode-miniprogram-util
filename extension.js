@@ -395,9 +395,9 @@ const activate = (context) => {
 									resolve()
 								});
 							})
-							showInformationMessage(name + '上传成功')
+							showInformationMessage(util.timeStr() + name + '上传成功')
 						} catch (e) {
-							showError(name + '上传失败', e)
+							showError(util.timeStr() + name + '上传失败', e)
 						}
 					} catch (e) {
 						//取消输入
@@ -485,9 +485,9 @@ const activate = (context) => {
 								});
 							})
 							await commands.executeCommand('vscode.open', vscode.Uri.file(qrcodeOutputDest))
-							showInformationMessage(name + '预览成功')
+							showInformationMessage(util.timeStr() + name + '预览成功')
 						} catch (e) {
-							showError(name + '预览失败', e)
+							showError(util.timeStr() + name + '预览失败', e)
 						}
 					} catch (e) {
 						//取消输入
@@ -503,14 +503,14 @@ const activate = (context) => {
 					cp.exec(command, {cwd}, (error, stdout, stderr) => {
 						if (error) {
 							console.error(`error: ${error}`)
-							showErrorMessage(name + `运行失败`)
+							showErrorMessage(util.timeStr() + name + `运行失败`)
 							global.mpuIDERunning = false
 							return
 						}
 						if (stderr) {
-							showErrorMessage(name + `运行失败`)
+							showErrorMessage(util.timeStr() + name + `运行失败`)
 						} else {
-							showInformationMessage('运行成功，如果工具未成功开启，请手动打开工具开启“设置 - 安全 - 服务端口”')
+							showInformationMessage(util.timeStr() + '运行成功，如果工具未成功开启，请手动打开工具开启“设置 - 安全 - 服务端口”')
 						}
 					})
 					break
