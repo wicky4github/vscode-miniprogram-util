@@ -2,7 +2,7 @@
   "name": "mpu",
   "displayName": "小程序工具",
   "description": "设置模板，同步项目；上传/预览/运行IDE",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "publisher": "Wicky",
   "repository": {
     "url": "https://github.com/wicky4github/vscode-miniprogram-util"
