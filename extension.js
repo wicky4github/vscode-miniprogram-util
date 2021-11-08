@@ -12,30 +12,34 @@ const MapProvider = require('./src/views/map')
 const SyncProvider = require('./src/views/sync')
 
 //监听工作区，自动刷新视图
-let watcher = null, syncProvider = null
+let watcher = null, 
+	mapProvider = null,
+	mapTree = null, 
+	syncProvider = null,
+	syncTree = null;
 const closeWatcher = () => watcher && watcher.close()
 events.on('mpu:ready', service => {
 	//映射区
 	{
-		const treeDataProvider = new MapProvider(service)
-		createTreeView('mpuViewMap', { treeDataProvider })
+		const treeDataProvider = mapProvider = new MapProvider(service)
+		mapTree = createTreeView('mpuViewMap', { treeDataProvider })
 	}
 	//同步区
 	{
 		const treeDataProvider = syncProvider = new SyncProvider(service)
-		createTreeView('mpuViewSync', { treeDataProvider })
+		syncTree = createTreeView('mpuViewSync', { treeDataProvider })
 	}
 	//监听文件
 	closeWatcher()
-	watcher = fs.watch(service.rootPath, { recursive: false }, (eventType, name) => {
+	watcher = fs.watch(service.rootPath, { recursive: false }, async (eventType, name) => {
 		//eventType:rename=新增/重命名/删除
 		//name:文件名称
 		console.log(eventType, name)
-		if (name.test(/^\./)) {
+		if (/^\./.test(name)) {
 			//.开头的文件夹不做任何处理（如.idea）
 			return
 		}
-		service.init()
+		await service.init()
 	})
 })
 

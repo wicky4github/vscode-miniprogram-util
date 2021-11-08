@@ -16,7 +16,7 @@ const mkdirs = dir => {
 
 const copy = (src, dest, filter) => {
     if (!fs.existsSync(dest)) {
-        mkdirs(src)
+        mkdirs(dest)
     }
     if (!fs.existsSync(src)) {
         return false

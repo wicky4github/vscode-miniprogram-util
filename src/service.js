@@ -25,7 +25,7 @@ class Service {
     async init() {
         const {workspaceFolders} = workspace
         if (!workspaceFolders || !workspaceFolders.length) {
-            return
+            return Promise.reject();
         }
 		const {uri: {fsPath}} = workspaceFolders[0]
         this.rootPath = fsPath
@@ -36,9 +36,12 @@ class Service {
                 showErrorMessage('配置文件有误')
             }
             if (this.config.enable) {
-                this.startIndexing()
+                await this.startIndexing()
+                await this.writeIdea()
             }
+            return Promise.resolve()
         }
+        return Promise.reject()
     }
 
     toggleEnable() {
@@ -169,8 +172,24 @@ class Service {
      */
     writeIdea(progress, end = 100) {
         return new Promise((resolve, reject) => {
+            let {config, rootPath} = this;
+            let map = config.map || {};
+            Object.keys(map).map(tpl => {
+                map[tpl] = map[tpl].filter(v => {
+                    try {
+                        const dir = path.join(rootPath, v)
+                        return fs.statSync(dir).isDirectory()
+                    } catch(e) {
+                        //文件不存在
+                        return false
+                    }
+                })
+                //文件夹名称按字典排序
+                map[tpl].sort()
+            });
+            config.map = map
             try {
-                fs.writeFileSync(this.ideaPath, beautify(this.config, null, 2, 2))
+                fs.writeFileSync(this.ideaPath, beautify(config, null, 2, 2))
                 resolve()
             } catch (e) {
                 console.log(e)
