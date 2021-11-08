@@ -25,7 +25,7 @@ class Service {
     async init() {
         const {workspaceFolders} = workspace
         if (!workspaceFolders || !workspaceFolders.length) {
-            return Promise.reject();
+            return Promise.reject()
         }
 		const {uri: {fsPath}} = workspaceFolders[0]
         this.rootPath = fsPath
@@ -172,8 +172,20 @@ class Service {
      */
     writeIdea(progress, end = 100) {
         return new Promise((resolve, reject) => {
-            let {config, rootPath} = this;
-            let map = config.map || {};
+            let {config, rootPath} = this
+            let map = config.map || {}
+            //校验一下模板是否存在，文件不存在，则删除键
+            for (let tpl in map) {
+                try {
+                    const dir = path.join(rootPath, tpl)
+                    if (!fs.statSync(dir).isDirectory()) {
+                        delete map[tpl]
+                    }
+                } catch(e) {
+                    delete map[tpl]
+                }
+            }
+            //校验一下子项目是否存在，文件不存在，则删除键
             Object.keys(map).map(tpl => {
                 map[tpl] = map[tpl].filter(v => {
                     try {
@@ -186,7 +198,7 @@ class Service {
                 })
                 //文件夹名称按字典排序
                 map[tpl].sort()
-            });
+            })
             config.map = map
             try {
                 fs.writeFileSync(this.ideaPath, beautify(config, null, 2, 2))

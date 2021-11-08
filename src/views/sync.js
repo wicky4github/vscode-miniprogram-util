@@ -1,6 +1,6 @@
 const vscode = require('vscode')
 const {EventEmitter, TreeItem, TreeItemCollapsibleState, window, ProgressLocation} = vscode
-const {showInformationMessage, showErrorMessage, withProgress} = window
+const {showInformationMessage, showErrorMessage, withProgress, setStatusBarMessage} = window
 const path = require('path')
 const util = require('../util')
 const parser = require('gitignore-parser')
@@ -53,11 +53,12 @@ class SyncProvider {
             location: ProgressLocation.Notification,
             title: 'Synchronizing...',
             cancellable: false
-        }, async (progress) => {
+        }, (progress) => {
 			const projects = [...this.service.getProjects(name)]
 			let currLoop = 0
 			for (let i = 0; i < projects.length; i++) {
 				for (let j = 0; j < files.length; j++) {
+					setStatusBarMessage('开始同步：' + projects[i] + ' -> ' + files[j] + '(' + (j + 1) + '/' + files.length + ')', 1000)
 					const templatePath = path.normalize(files[j].path).replace(/^\\/, '')
 					const targetPath = templatePath.replace(name, projects[i])
 					util.copy(templatePath, targetPath, (dest) => !this.isNonReplacable(projects[i], dest))
@@ -65,6 +66,7 @@ class SyncProvider {
 					progress.report({ increment: Math.ceil(((++currLoop) / (projects.length * files.length)) * 100) })
 				}
 			}
+			setStatusBarMessage('全部同步完毕', 1000)
 			this.compileList = []
             return Promise.resolve()
         }).then(() => showInformationMessage(util.timeStr() + '同步成功')).catch(() => showErrorMessage(util.timeStr() + '同步失败'))
@@ -75,16 +77,20 @@ class SyncProvider {
             location: ProgressLocation.Notification,
             title: 'Synchronizing...',
             cancellable: false
-        }, async (progress) => {
+        }, (progress) => {
 			const template = this.service.getTemplate(name)
 			let currLoop = 0
 			for (let j = 0; j < files.length; j++) {
+				setStatusBarMessage('开始同步：' + files[i], 1000)
 				const projectPath = path.normalize(files[j].path).replace(/^\\/, '')
 				const targetPath = projectPath.replace(name, template)
 				util.copy(projectPath, targetPath, (dest) => !this.isNonReplacable(template, dest))
 
 				progress.report({ increment: Math.ceil((++currLoop) / files.length * 100) })
+
+				setStatusBarMessage('开始同步：' + files[i] + '(' + (j + 1) + '/' + files.length + ')', 1000)
 			}
+			setStatusBarMessage('全部同步完毕', 1000)
 			this.compileList = []
             return Promise.resolve()
         }).then(() => showInformationMessage(util.timeStr() + '同步成功')).catch(() => showErrorMessage(util.timeStr() + '同步失败'))
